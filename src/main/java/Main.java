@@ -7,7 +7,7 @@ public class Main {
         while (true) {
             System.out.print("$ ");
 
-             = scanner.nextLine();
+            String input = scanner.nextLine();
             System.out.println(input + ": command not found");
         }
     }
