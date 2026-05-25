@@ -12,8 +12,8 @@ public class Main {
 
             if (input.equals("exit")) {
                 break;
-                System.out.println("Exiting...");
             }
+
         }
 
     }
