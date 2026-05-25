@@ -9,12 +9,12 @@ public class Main {
 
             String input = scanner.nextLine();
 
-            if (input.equals("exit")) {
-                System.out.println(input + ": is a built-in command");
-                break;
-            } else if (input.startsWith("echo")) {
+            if (input.equals("echo")) {
                 System.out.println(input.substring(5));
                 System.out.println(input + ": is a built-in command");
+            } else if (input.startsWith("exit")) {
+                System.out.println(input + ": is a built-in command");
+                break;
             } else if (input.startsWith("type")) {
                 System.out.println(input + ": is a built-in command");
             } else {
