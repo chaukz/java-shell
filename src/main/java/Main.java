@@ -6,21 +6,18 @@ public class Main {
 
         while (true) {
             System.out.print("$ ");
-
             String input = scanner.nextLine();
 
-            if (input.equals("echo")) {
-                System.out.println(input.substring(5));
-                System.out.println(input + ": is a built-in command");
-            } else if (input.startsWith("exit")) {
-                System.out.println(input + ": is a built-in command");
-                break;
-            } else if (input.startsWith("type")) {
-                System.out.println(input + ": is a built-in command");
+            if (input.equals("exit") || input.startsWith("exit ")) {
+                String[] parts = input.split(" ");
+                int code = parts.length > 1 ? Integer.parseInt(parts[1]) : 0;
+                System.exit(code);
+            } else if (input.equals("echo") || input.startsWith("echo ")) {
+                String output = input.length() > 4 ? input.substring(5) : "";
+                System.out.println(output);
             } else {
                 System.out.println(input + ": command not found");
             }
-
         }
     }
 }
