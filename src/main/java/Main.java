@@ -15,21 +15,42 @@ public class Main {
                 break;
 
             } else if (command.startsWith("echo")) {
-                System.out.println(command.substring(5));
-
-            } else if (getExecutablePath(command) != null) {
-                Process process = Runtime.getRuntime().exec(command.split(" "));
-                process.getInputStream().transferTo(System.out);
+                System.out.println(command.substring(5).trim());
 
             } else if (command.startsWith("type")) {
                 String typeArg = command.substring(5).trim();
                 System.out.println(type(typeArg));
 
             } else {
-                System.out.println(command + ": command not found");
+                String execPath = getExecutablePath(command);
+                if (execPath != null) {
+                    try {
+                        Process process = Runtime.getRuntime().exec(command.split(" "));
+                        process.getInputStream().transferTo(System.out);
+                    } catch (Exception e) {
+                        System.out.println(command + ": command not found");
+                    }
+                } else {
+                    System.out.println(command + ": command not found");
+                }
             }
         }
         scanner.close();
+    }
+
+    public static String getExecutablePath(String command) {
+        String[] parts = command.split(" ");
+        String cmd = parts[0];
+        String path = System.getenv("PATH");
+        String[] pathDirs = path.split(":");
+
+        for (int i = 0; i < pathDirs.length; i++) {
+            File file = new File(pathDirs[i] + "/" + cmd);
+            if (file.exists() && file.canExecute()) {
+                return file.getAbsolutePath();
+            }
+        }
+        return null;
     }
 
     public static String type(String command) {
@@ -41,7 +62,6 @@ public class Main {
         String path = System.getenv("PATH");
         String[] pathDirs = path.split(":");
 
-        boolean isBuiltIn = false;
         for (int i = 0; i < commands.length; i++) {
             if (command.equals(commands[i])) {
                 return command + " is a shell builtin";
