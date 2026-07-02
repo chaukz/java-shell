@@ -39,7 +39,7 @@ public class Main {
         boolean isBuiltIn = false;
         for (int i = 0; i < commands.length; i++) {
             if (command.equals(commands[i])) {
-                return command + " is a built-in command";
+                return command + " is a shell builtin";
             }
         }
         for (int i = 0; i < pathDirs.length; i++) {
