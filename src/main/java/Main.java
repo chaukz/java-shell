@@ -4,34 +4,50 @@ import java.util.Scanner;
 public class Main {
     public static void main(String[] args) throws Exception {
         Scanner scanner = new Scanner(System.in);
+        String path = System.getenv("PATH");
+        String pathDir = path.splt(":");
+
         while (true) {
             System.out.print("$ ");
-            String input = scanner.nextLine();
-            if (input.equals("exit") || input.startsWith("exit ")) {
-                String[] parts = input.split(" ");
-                int code = parts.length > 1 ? Integer.parseInt(parts[1]) : 0;
-                System.exit(code);
-            } else if (input.equals("echo") || input.startsWith("echo ")) {
-                String output = input.length() > 4 ? input.substring(5) : "";
-                System.out.println(output);
-            } else if (input.equals("type") || input.startsWith("type ")) {
-                String arg = input.length() > 4 ? input.substring(5).trim() : "";
-                if (arg.equals("ec ho") || arg.equals("exit") || arg.equals("type")) {
-                    System.out.println(arg + " is a shell builtin");
-                } else {
-                    System.out.println(arg + ": not found");
-                }
+            String command = scanner.nextLine();
+            
+            if (command.equals("exit")) {
+                Sbreak;
+
+            } else if (command.equals("echo")) {
+                System.out.println(command.substring(5));
+
+            } else if (command.equals("type")) {
+                String typeArg = command.substring(5);
+                System.out.println(type(type, typeArg));
             } else {
-                System.out.println(input + ": command not found");
+                System.out.println(command+ ": command not found");
             }
         }
         scanner.close();
-        for (int i = 0; i < parts.length; i++) { // Check if the command exists in the system PATH
-            File file = new File(parts[i]); // Create a File object for the command
-            if (file.exists() && file.canExecute()) { // Check if the file exists and is executable
-                return arg + " is " + file.getAbsolutePath();// Return the absolute path of the command
+    }
+
+    public static String type(String command){
+            String[] commands = {
+                "echo",
+                "type",
+                "exit"
+            };
+            String path = System.getenv("PATH");
+            String[] pathDirs = path.split(":");
+
+            boolean is BuiltIn = false;
+            for(int i = 0; i < commands.length; i++) {
+                if (command.equals(commands[i])) {
+                    return command + " is a built-in command";
+                }
+            }
+        for(int i = 0; i < pathDirs.length; i++) {
+            File file = new File(pathDirs[i] + "/" + command);
+            if (file.exists() && file.canExecute()) {
+                return command + " is " + file.getAbsolutePath();
             }
         }
-        return arg + " is not found"; // Return a message indicating that the command was not found
+        return command + " is not found";
     }
 }
