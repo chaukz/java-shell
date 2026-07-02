@@ -1,3 +1,4 @@
+import java.io.File;
 import java.util.Scanner;
 
 public class Main {
@@ -15,7 +16,7 @@ public class Main {
                 System.out.println(output);
             } else if (input.equals("type") || input.startsWith("type ")) {
                 String arg = input.length() > 4 ? input.substring(5).trim() : "";
-                if (arg.equals("echo") || arg.equals("exit") || arg.equals("type")) {
+                if (arg.equals("ec ho") || arg.equals("exit") || arg.equals("type")) {
                     System.out.println(arg + " is a shell builtin");
                 } else {
                     System.out.println(arg + ": not found");
@@ -24,5 +25,13 @@ public class Main {
                 System.out.println(input + ": command not found");
             }
         }
+        scanner.close();
+        for (int i = 0; i < parts.length; i++) { // Check if the command exists in the system PATH
+            File file = new File(parts[i]); // Create a File object for the command
+            if (file.exists() && file.canExecute()) { // Check if the file exists and is executable
+                return arg + " is " + file.getAbsolutePath();// Return the absolute path of the command
+            }
+        }
+        return arg + " is not found"; // Return a message indicating that the command was not found
     }
 }
