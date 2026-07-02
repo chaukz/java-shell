@@ -17,9 +17,14 @@ public class Main {
             } else if (command.startsWith("echo")) {
                 System.out.println(command.substring(5));
 
+            } else if (getExecutablePath(command) != null) {
+                Process process = Runtime.getRuntime().exec(command.split(" "));
+                process.getInputStream().transferTo(System.out);
+
             } else if (command.startsWith("type")) {
                 String typeArg = command.substring(5).trim();
                 System.out.println(type(typeArg));
+
             } else {
                 System.out.println(command + ": command not found");
             }
