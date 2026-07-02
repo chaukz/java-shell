@@ -48,6 +48,6 @@ public class Main {
                 return command + " is " + file.getAbsolutePath();
             }
         }
-        return command + " is not found";
+        return command + ": not found";
     }
 }
