@@ -5,44 +5,44 @@ public class Main {
     public static void main(String[] args) throws Exception {
         Scanner scanner = new Scanner(System.in);
         String path = System.getenv("PATH");
-        String pathDir = path.splt(":");
+        String[] pathDirs = path.split(":");
 
         while (true) {
             System.out.print("$ ");
             String command = scanner.nextLine();
-            
-            if (command.equals("exit")) {
-                Sbreak;
 
-            } else if (command.equals("echo")) {
+            if (command.equals("exit")) {
+                break;
+
+            } else if (command.startsWith("echo")) {
                 System.out.println(command.substring(5));
 
-            } else if (command.equals("type")) {
-                String typeArg = command.substring(5);
-                System.out.println(type(type, typeArg));
+            } else if (command.startsWith("type")) {
+                String typeArg = command.substring(5).trim();
+                System.out.println(type(typeArg));
             } else {
-                System.out.println(command+ ": command not found");
+                System.out.println(command + ": command not found");
             }
         }
         scanner.close();
     }
 
-    public static String type(String command){
-            String[] commands = {
+    public static String type(String command) {
+        String[] commands = {
                 "echo",
                 "type",
                 "exit"
-            };
-            String path = System.getenv("PATH");
-            String[] pathDirs = path.split(":");
+        };
+        String path = System.getenv("PATH");
+        String[] pathDirs = path.split(":");
 
-            boolean is BuiltIn = false;
-            for(int i = 0; i < commands.length; i++) {
-                if (command.equals(commands[i])) {
-                    return command + " is a built-in command";
-                }
+        boolean isBuiltIn = false;
+        for (int i = 0; i < commands.length; i++) {
+            if (command.equals(commands[i])) {
+                return command + " is a built-in command";
             }
-        for(int i = 0; i < pathDirs.length; i++) {
+        }
+        for (int i = 0; i < pathDirs.length; i++) {
             File file = new File(pathDirs[i] + "/" + command);
             if (file.exists() && file.canExecute()) {
                 return command + " is " + file.getAbsolutePath();
