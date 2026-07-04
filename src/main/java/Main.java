@@ -21,6 +21,9 @@ public class Main { // Main class for the simple shell
                 String typeArg = command.substring(5).trim(); // Extract argument after 'type '
                 System.out.println(type(typeArg)); // Show whether the argument is builtin or external
 
+            } else if (command.equals("pwd")) { // If input is exactly 'pwd'
+                System.out.println(System.getProperty("user.dir")); // Print current directory
+
             } else { // Otherwise try to execute an external command
                 String execPath = getExecutablePath(command); // Look up the executable in PATH
                 if (execPath != null) { // If an executable was found
@@ -59,6 +62,7 @@ public class Main { // Main class for the simple shell
                 "echo",
                 "type",
                 "exit"
+                
         };
         String path = System.getenv("PATH"); // Read PATH for checking external commands
         String[] pathDirs = path.split(":"); // Split PATH into directories
