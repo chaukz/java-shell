@@ -137,6 +137,18 @@ public class Shell {
                 continue;
             }
 
+            if (inDoubleQuote && c == '\\' && i + 1 < line.length()) {
+                char next = line.charAt(i + 1);
+                if (next == '"' || next == '\\') {
+                    currentArg.append(next);
+                    i++;
+                    continue;
+                }
+
+                currentArg.append(c);
+                continue;
+            }
+
             if (!inSingleQuote && !inDoubleQuote && Character.isWhitespace(c)) {
                 if (currentArg.length() > 0) {
                     args.add(currentArg.toString());
