@@ -104,61 +104,51 @@ public class Shell {
     }
 
     /**
-     * Parse a command line into tokens, respecting single quotes.
-     * Single quotes disable all special meaning for enclosed characters.
-     * Spaces inside single quotes are preserved and not used as delimiters.
-     * 
-     * Examples:
-     * "echo hello" -> ["echo", "hello"]
-     * "echo 'hello world'" -> ["echo", "hello world"]
-     * "echo a'b c'd" -> ["echo", "ab cd"]
+     * Parse a command line into tokens, respecting single and double quotes.
+     *
+     * Rules handled:
+     * - Whitespace splits arguments only when outside quotes.
+     * - Single-quoted and double-quoted sections preserve whitespace literally.
+     * - Adjacent quoted/unquoted pieces are concatenated into one argument.
      */
     private List<String> parseCommandLine(String line) {
-        List<String> args = new ArrayList<>(); // Create a list to store the parsed tokens/arguments
-
-        // If the line is null or empty (after trimming whitespace), return empty list
-        if (line == null || line.trim().isEmpty()) {
+        List<String> args = new ArrayList<>();
+        if (line == null || line.isBlank()) {
             return args;
         }
 
-        StringBuilder currentArg = new StringBuilder(); // Build up the current argument character by character
-        boolean inSingleQuote = false; // Track whether we are currently inside single quotes
+        StringBuilder currentArg = new StringBuilder();
+        boolean inSingleQuote = false;
+        boolean inDoubleQuote = false;
 
-        // Iterate through each character in the input line
         for (int i = 0; i < line.length(); i++) {
-            char c = line.charAt(i); // Get the current character
+            char c = line.charAt(i);
 
-            // If we encounter a single quote, toggle the quote mode
-            if (c == '\'') {
-                inSingleQuote = !inSingleQuote; // Toggle: inside -> outside, or outside -> inside
-                continue; // Don't include the quote character itself in the argument
+            if (c == '\'' && !inDoubleQuote) {
+                inSingleQuote = !inSingleQuote;
+                continue;
             }
 
-            // If we're inside single quotes, preserve all characters literally (including
-            // spaces)
-            if (inSingleQuote) {
-                currentArg.append(c); // Add character to current argument
+            if (c == '"' && !inSingleQuote) {
+                inDoubleQuote = !inDoubleQuote;
+                continue;
             }
-            // If we're outside quotes and hit whitespace (space, tab, newline, etc.)
-            else if (Character.isWhitespace(c)) {
-                // Only add the argument if it has content (avoid empty arguments from extra
-                // spaces)
+
+            if (!inSingleQuote && !inDoubleQuote && Character.isWhitespace(c)) {
                 if (currentArg.length() > 0) {
-                    args.add(currentArg.toString()); // Store the completed argument
-                    currentArg = new StringBuilder(); // Start a fresh argument for the next token
+                    args.add(currentArg.toString());
+                    currentArg.setLength(0);
                 }
+                continue;
             }
-            // Outside quotes and not whitespace: regular character
-            else {
-                currentArg.append(c); // Add this character to the current argument
-            }
+
+            currentArg.append(c);
         }
 
-        // After the loop ends, don't forget the last argument (if it has content)
         if (currentArg.length() > 0) {
             args.add(currentArg.toString());
         }
 
-        return args; // Return the list of parsed tokens
+        return args;
     }
 }
