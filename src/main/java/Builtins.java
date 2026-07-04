@@ -2,7 +2,7 @@ import java.io.File;
 
 public class Builtins {
 
-    private final String[] commands = { "echo", "type", "exit" };
+    private final String[] commands = { "echo", "type", "exit", "cd" , "pwd" };
 
     public boolean isBuiltin(String name) {
         for (String c : commands) {

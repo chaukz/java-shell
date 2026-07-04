@@ -45,6 +45,12 @@ public class Shell {
                 out.println(builtins.type(arg));
                 continue;
             }
+
+            if (line.equals("pwd")) {
+                out.println(System.getProperty("user.dir"));
+                continue;
+            }
+
             if (line.startsWith("cd")) {
                 String arg = line.length() > 3 ? line.substring(3).trim() : "";
                 if (arg.isEmpty()) {
