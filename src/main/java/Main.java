@@ -61,8 +61,9 @@ public class Main { // Main class for the simple shell
         String[] commands = { // List of built-in commands supported by this shell
                 "echo",
                 "type",
-                "exit"
-                
+                "exit",
+                "pwd"
+
         };
         String path = System.getenv("PATH"); // Read PATH for checking external commands
         String[] pathDirs = path.split(":"); // Split PATH into directories
