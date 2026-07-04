@@ -24,6 +24,20 @@ public class Main { // Main class for the simple shell
             } else if (command.equals("pwd")) { // If input is exactly 'pwd'
                 System.out.println(System.getProperty("user.dir")); // Print current directory
 
+            }else if (command.startsWith("cd")) {
+                String[] parts = command.split(" ", 2); // Split into 'cd' and the target directory
+                if (parts.length < 2) { // If no directory was provided
+                    System.out.println("cd: missing argument"); // Inform the user
+                } else {
+                    String targetDir = parts[1].trim(); // Get the target directory
+                    File dir = new File(targetDir); // Create a File object for the target directory
+                    if (dir.exists() && dir.isDirectory()) { // Check if it exists and is a directory
+                        System.setProperty("user.dir", dir.getAbsolutePath()); // Change current directory
+                    } else {
+                        System.out.println("cd: " + targetDir + ": No such file or directory"); // Error message
+                    }
+                }
+                
             } else { // Otherwise try to execute an external command
                 String execPath = getExecutablePath(command); // Look up the executable in PATH
                 if (execPath != null) { // If an executable was found
@@ -62,7 +76,8 @@ public class Main { // Main class for the simple shell
                 "echo",
                 "type",
                 "exit",
-                "pwd"
+                "pwd",
+                "cd"
 
         };
         String path = System.getenv("PATH"); // Read PATH for checking external commands
