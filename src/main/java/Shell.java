@@ -92,7 +92,11 @@ public class Shell {
             String execPath = executor.findExecutable(command);
             if (execPath != null) {
                 try {
-                    String[] argv = tokens.toArray(new String[0]);
+                    String[] argv = new String[tokens.size()];
+                    argv[0] = execPath;
+                    for (int i = 1; i < tokens.size(); i++) {
+                        argv[i] = tokens.get(i);
+                    }
                     executor.execute(argv, out, System.err);
                 } catch (Exception e) {
                     out.println(command + ": command not found");

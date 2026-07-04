@@ -3,25 +3,24 @@ import java.io.OutputStream;
 
 public class Executor {
 
-    public String findExecutable(String commandLine) {
-        if (commandLine == null || commandLine.isEmpty()) return null;
-        String[] parts = commandLine.split(" ");
-        String cmd = parts[0];
+    public String findExecutable(String commandName) {
+        if (commandName == null || commandName.isEmpty())
+            return null;
         String path = System.getenv("PATH");
         String[] pathDirs = PathUtils.splitPath(path);
 
         for (int i = 0; i < pathDirs.length; i++) {
-            File file = new File(pathDirs[i] + "/" + cmd);
+            File file = new File(pathDirs[i] + "/" + commandName);
             if (file.exists() && file.canExecute()) {
                 return file.getAbsolutePath();
             }
         }
         return null;
     }
-    
 
     public int execute(String[] argv, OutputStream out, OutputStream err) throws Exception {
-        if (argv == null || argv.length == 0) return -1;
+        if (argv == null || argv.length == 0)
+            return -1;
         ProcessBuilder pb = new ProcessBuilder(argv);
         Process p = pb.start();
         // stream output and error to provided streams
