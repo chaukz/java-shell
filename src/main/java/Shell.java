@@ -104,15 +104,18 @@ public class Shell {
     }
 
     /**
-     * Parse a command line into tokens, respecting single and double quotes.
+     * Parse a command line into tokens while respecting quote rules.
      *
-     * Rules handled:
-     * - Whitespace splits arguments only when outside quotes.
-     * - Single-quoted and double-quoted sections preserve whitespace literally.
-     * - Adjacent quoted/unquoted pieces are concatenated into one argument.
+     * Rules handled here:
+     * - Whitespace splits arguments only when outside both quote types.
+     * - Single quotes preserve everything literally until the next single quote.
+     * - Double quotes preserve everything literally until the next double quote.
+     * - Adjacent quoted and unquoted text is concatenated into one argument.
+     * - Backslashes stay literal inside single quotes.
      */
     private List<String> parseCommandLine(String line) {
         List<String> args = new ArrayList<>();
+
         if (line == null || line.isBlank()) {
             return args;
         }
@@ -142,17 +145,6 @@ public class Shell {
                 continue;
             }
 
-            if (c == '\\' && i + 1 < line.length()) {
-                // Handle escaped characters
-                currentArg.append(line.charAt(i + 1));
-                i++; // Skip the next character as it's escaped
-                continue;
-
-            } else if (c = "\\" && !inSingleQuote && !inDoubleQuote) {
-                // Handle escaped backslash
-                currentArg.append('\\');
-                continue;
-            }
             currentArg.append(c);
         }
 
