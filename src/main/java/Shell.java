@@ -67,6 +67,8 @@ public class Shell {
                     dir = new File(System.getProperty("user.dir")).getParentFile();
                 } else if (arg.equals("./" + dir.getName()) || arg.equals(dir.getName())) {
                     dir = new File(System.getProperty("user.dir"), dir.getName());
+                } else if (arg.equals ("~")) {
+                    dir = new File(System.getProperty("user.home"));
                 }
                 System.setProperty("user.dir", dir.getAbsolutePath());
                 continue;
