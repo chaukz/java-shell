@@ -141,10 +141,16 @@ public class Shell {
                 }
                 continue;
             }
+
             if (c == '\\' && i + 1 < line.length()) {
                 // Handle escaped characters
                 currentArg.append(line.charAt(i + 1));
                 i++; // Skip the next character as it's escaped
+                continue;
+
+            } else if (c = "\\" && !inSingleQuote && !inDoubleQuote) {
+                // Handle escaped backslash
+                currentArg.append('\\');
                 continue;
             }
             currentArg.append(c);
