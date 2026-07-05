@@ -30,9 +30,10 @@ public class Executor {
         command.add("sh");
         command.add("-c");
         command.add("exec -a \"$0\" \"$1\" \"${@:2}\"");
-        command.add(commandName); // becomes $0
-        command.add(execPath); // becomes $1
-        command.addAll(args); // become $2, $3, ...
+        command.add("sh"); // placeholder for $0, will be replaced by exec -a
+        command.add(commandName); // placeholder for $1, will be replaced by exec -a
+        command.add(execPath); // placeholder for $1, will be replaced by exec -a
+        command.addAll(args); // placeholders for $2, $3, ...
 
         ProcessBuilder pb = new ProcessBuilder(command);
         Process p = pb.start();
