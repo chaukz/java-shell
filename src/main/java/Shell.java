@@ -89,7 +89,9 @@ public class Shell {
             }
 
             // Try external command execution
-            String execPath = executor.findExecutable(command);
+            // For quoted executables like 'my program', we need to unquote for PATH lookup
+            String unquotedCommand = unquote(command);
+            String execPath = executor.findExecutable(unquotedCommand);
             if (execPath != null) {
                 try {
                     String[] argv = new String[tokens.size()];
@@ -169,6 +171,19 @@ public class Shell {
         }
 
         return args;
+    }
+
+    /**
+     * Unquote a raw token by parsing it and extracting the first argument.
+     * This is used to extract the actual executable name from quoted tokens.
+     * For example: "my program" -> my program, 'exe' -> exe, prog -> prog
+     *
+     * @param raw the raw token that may contain quotes
+     * @return the unquoted executable name, or the original if no quotes
+     */
+    private String unquote(String raw) {
+        List<String> parsed = parseCommandLine(raw);
+        return parsed.isEmpty() ? raw : parsed.get(0);
     }
     
 }
