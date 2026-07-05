@@ -182,7 +182,7 @@ public class Shell {
      * @return the unquoted executable name, or the original if no quotes
      */
     private String unquote(String raw) {
-        List<String> parsed = parseCommandLine(raw);
+        List<String> parsed = parseCommandLine(z);
         return parsed.isEmpty() ? raw : parsed.get(0);
     }
 
