@@ -95,7 +95,7 @@ public class Shell {
             if (execPath != null) {
                 try {
                     String[] argv = new String[tokens.size()];
-                    argv[0] = execPath;
+                    argv[0] = execPath; // Use the resolved path to execute the process
                     for (int i = 1; i < tokens.size(); i++) {
                         argv[i] = tokens.get(i);
                     }
@@ -185,5 +185,5 @@ public class Shell {
         List<String> parsed = parseCommandLine(raw);
         return parsed.isEmpty() ? raw : parsed.get(0);
     }
-    
+
 }
