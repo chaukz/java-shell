@@ -1,14 +1,14 @@
 import java.io.File;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Executor {
-
     public String findExecutable(String commandName) {
         if (commandName == null || commandName.isEmpty())
             return null;
         String path = System.getenv("PATH");
         String[] pathDirs = PathUtils.splitPath(path);
-
         for (int i = 0; i < pathDirs.length; i++) {
             File file = new File(pathDirs[i] + "/" + commandName);
             if (file.exists() && file.canExecute()) {
@@ -18,12 +18,25 @@ public class Executor {
         return null;
     }
 
-    public int execute(String[] argv, OutputStream out, OutputStream err) throws Exception {
-        if (argv == null || argv.length == 0)
+    // commandName: what argv[0] should look like (e.g. "custom_exe_6371")
+    // execPath: the actual resolved path to run (e.g. "/tmp/pig/custom_exe_6371")
+    // args: remaining arguments (everything after argv[0])
+    public int execute(String commandName, String execPath, List<String> args,
+            OutputStream out, OutputStream err) throws Exception {
+        if (execPath == null || execPath.isEmpty())
             return -1;
-        ProcessBuilder pb = new ProcessBuilder(argv);
+
+        List<String> command = new ArrayList<>();
+        command.add("sh");
+        command.add("-c");
+        command.add("exec -a \"$0\" \"$1\" \"${@:2}\"");
+        command.add(commandName); // becomes $0
+        command.add(execPath); // becomes $1
+        command.addAll(args); // become $2, $3, ...
+
+        ProcessBuilder pb = new ProcessBuilder(command);
         Process p = pb.start();
-        // stream output and error to provided streams
+
         Thread t1 = new Thread(() -> {
             try {
                 p.getInputStream().transferTo(out);

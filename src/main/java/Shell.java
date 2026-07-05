@@ -3,6 +3,7 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+import java.util.concurrent.Executor;
 
 public class Shell {
     private final Builtins builtins;
@@ -94,12 +95,8 @@ public class Shell {
             String execPath = executor.findExecutable(unquotedCommand);
             if (execPath != null) {
                 try {
-                    String[] argv = new String[tokens.size()];
-                    argv[0] = execPath; // Use the resolved path to execute the process
-                    for (int i = 1; i < tokens.size(); i++) {
-                        argv[i] = tokens.get(i);
-                    }
-                    executor.execute(argv, out, System.err);
+                    List<String> restArgs = tokens.subList(1, tokens.size());
+                    executor.execute(unquotedCommand, execPath, restArgs, out, System.err);
                 } catch (Exception e) {
                     out.println(command + ": command not found");
                 }
