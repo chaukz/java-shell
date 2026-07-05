@@ -29,11 +29,11 @@ public class Executor {
         List<String> command = new ArrayList<>();
         command.add("sh");
         command.add("-c");
-        command.add("exec -a \"$0\" \"$1\" \"${@:2}\"");
-        command.add("sh"); // placeholder for $0, will be replaced by exec -a
-        command.add(commandName); // placeholder for $1, will be replaced by exec -a
-        command.add(execPath); // placeholder for $1, will be replaced by exec -a
-        command.addAll(args); // placeholders for $2, $3, ...
+        command.add("name=$1; path=$2; shift 2; exec -a \"$name\" \"$path\" \"$@\"");
+        command.add("sh"); // becomes $0 inside the script (unused, just a placeholder)
+        command.add(commandName); // becomes $1
+        command.add(execPath); // becomes $2
+        command.addAll(args); // become $3, $4, ...
 
         ProcessBuilder pb = new ProcessBuilder(command);
         Process p = pb.start();
