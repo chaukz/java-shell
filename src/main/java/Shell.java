@@ -1,9 +1,9 @@
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
-import java.io.FileOutputStream;
 
 public class Shell {
     private final Builtins builtins;
@@ -44,13 +44,38 @@ public class Shell {
                 continue;
             }
 
+            // Pull out a redirect target (> or 1>), if there is one
+            String redirectFile = null;
+            List<String> cleanTokens = new ArrayList<>();
+            for (int i = 0; i < tokens.size(); i++) {
+                String tok = tokens.get(i);
+                if (tok.equals(">") || tok.equals("1>")) {
+                    if (i + 1 < tokens.size()) {
+                        redirectFile = tokens.get(i + 1);
+                    }
+                    break;
+                }
+                cleanTokens.add(tok);
+            }
+            tokens = cleanTokens;
+
+            if (tokens.isEmpty()) {
+                continue;
+            }
+
             String command = tokens.get(0);
             List<String> args = tokens.subList(1, tokens.size());
+
+            // Decide where builtin output should go: terminal, or a redirect file
+            PrintStream target = out;
+            if (redirectFile != null) {
+                target = new PrintStream(new FileOutputStream(redirectFile));
+            }
 
             if (command.equals("echo")) {
                 String output = String.join(" ", args);
                 target.println(output.isEmpty() ? "" : output);
-                if (redirectFile != null) target.close(); 
+                if (redirectFile != null) target.close();
                 continue;
             }
 
@@ -91,17 +116,12 @@ public class Shell {
                 System.setProperty("user.dir", dir.getAbsolutePath());
                 continue;
             }
-            PrintStream target
 
             // Try external command execution
-            // For quoted executables like 'my program', we need to unquote for PATH lookup
-            String unquotedCommand = unquote(command);
-            
             String execPath = executor.findExecutable(command);
             if (execPath != null) {
                 try {
-                    List<String> restArgs = tokens.subList(1, tokens.size());
-                    executor.execute(command, execPath, restArgs, redirectFile, out, System.err);
+                    executor.execute(command, execPath, args, redirectFile, out, System.err);
                 } catch (Exception e) {
                     out.println(command + ": command not found");
                 }
@@ -113,13 +133,6 @@ public class Shell {
 
     /**
      * Parse a command line into tokens while respecting quote rules.
-     *
-     * Rules handled here:
-     * - Whitespace splits arguments only when outside both quote types.
-     * - Single quotes preserve everything literally until the next single quote.
-     * - Double quotes preserve everything literally until the next double quote.
-     * - Adjacent quoted and unquoted text is concatenated into one argument.
-     * - Backslashes stay literal inside single quotes.
      */
     private List<String> parseCommandLine(String line) {
         List<String> args = new ArrayList<>();
@@ -142,6 +155,12 @@ public class Shell {
 
             if (c == '"' && !inSingleQuote) {
                 inDoubleQuote = !inDoubleQuote;
+                continue;
+            }
+
+            if (!inSingleQuote && !inDoubleQuote && c == '\\' && i + 1 < line.length()) {
+                currentArg.append(line.charAt(i + 1));
+                i++;
                 continue;
             }
 
@@ -174,45 +193,4 @@ public class Shell {
 
         return args;
     }
-
-    /**
-     * Unquote a raw token by parsing it and extracting the first argument.
-     * This is used to extract the actual executable name from quoted tokens.
-     * For example: "my program" -> my program, 'exe' -> exe, prog -> prog
-     *
-     * @param raw the raw token that may contain quotes
-     * @return the unquoted executable name, or the original if no quotes
-     */
-    private String unquote(String raw) {
-        List<String> parsed = parseCommandLine(raw);
-        return parsed.isEmpty() ? raw : parsed.get(0);
-    }
-
-    List<String> tokens = parseCommandLine(line);if(tokens.isEmpty())
-    {
-        continue;
-    }
-
-    // pull out a redirect target
-    String redirectFile = null;
-    List<String> cleanTokens = new ArrayList<>();for(
-    int i = 0;i<tokens.size();i++){
-        String tok = tokens.get(i);
-        if (tok.equals(">")|| tok.equals("i>")) {
-            if (i+1 <tokens.size()) {
-                redirectFile = tokens.get(i+1);
-            }
-            break;
-        }
-        cleanTokens.add(tok):
-    }tokens=cleanTokens;
-
-    if(tokens.isEmpty)
-    {
-        continue;
-    }
-
-    String command = tokens.get(0);
-    List<String> args = tokens.sublist(1, tokens.size());
-
 }
