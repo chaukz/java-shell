@@ -3,6 +3,7 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+import java.io.FileOutputStream;
 
 public class Shell {
     private final Builtins builtins;
@@ -48,18 +49,21 @@ public class Shell {
 
             if (command.equals("echo")) {
                 String output = String.join(" ", args);
-                out.println(output.isEmpty() ? "" : output);
+                target.println(output.isEmpty() ? "" : output);
+                if (redirectFile != null) target.close(); 
                 continue;
             }
 
             if (command.equals("type")) {
                 String arg = args.isEmpty() ? "" : args.get(0);
-                out.println(builtins.type(arg));
+                target.println(builtins.type(arg));
+                if (redirectFile != null) target.close();
                 continue;
             }
 
             if (command.equals("pwd")) {
-                out.println(System.getProperty("user.dir"));
+                target.println(System.getProperty("user.dir"));
+                if (redirectFile != null) target.close();
                 continue;
             }
 
@@ -87,15 +91,17 @@ public class Shell {
                 System.setProperty("user.dir", dir.getAbsolutePath());
                 continue;
             }
+            PrintStream target
 
             // Try external command execution
             // For quoted executables like 'my program', we need to unquote for PATH lookup
             String unquotedCommand = unquote(command);
-            String execPath = executor.findExecutable(unquotedCommand);
+            
+            String execPath = executor.findExecutable(command);
             if (execPath != null) {
                 try {
                     List<String> restArgs = tokens.subList(1, tokens.size());
-                    executor.execute(unquotedCommand, execPath, restArgs, out, System.err);
+                    executor.execute(command, execPath, restArgs, redirectFile, out, System.err);
                 } catch (Exception e) {
                     out.println(command + ": command not found");
                 }
@@ -181,5 +187,32 @@ public class Shell {
         List<String> parsed = parseCommandLine(raw);
         return parsed.isEmpty() ? raw : parsed.get(0);
     }
+
+    List<String> tokens = parseCommandLine(line);if(tokens.isEmpty())
+    {
+        continue;
+    }
+
+    // pull out a redirect target
+    String redirectFile = null;
+    List<String> cleanTokens = new ArrayList<>();for(
+    int i = 0;i<tokens.size();i++){
+        String tok = tokens.get(i);
+        if (tok.equals(">")|| tok.equals("i>")) {
+            if (i+1 <tokens.size()) {
+                redirectFile = tokens.get(i+1);
+            }
+            break;
+        }
+        cleanTokens.add(tok):
+    }tokens=cleanTokens;
+
+    if(tokens.isEmpty)
+    {
+        continue;
+    }
+
+    String command = tokens.get(0);
+    List<String> args = tokens.sublist(1, tokens.size());
 
 }

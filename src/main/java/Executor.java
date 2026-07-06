@@ -1,5 +1,6 @@
 import java.io.File;
 import java.io.OutputStream;
+import java.lang.ProcessBuilder.Redirect;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,7 +22,7 @@ public class Executor {
     // commandName: what argv[0] should look like (e.g. "custom_exe_6371")
     // execPath: the actual resolved path to run (e.g. "/tmp/pig/custom_exe_6371")
     // args: remaining arguments (everything after argv[0])
-    public int execute(String commandName, String execPath, List<String> args,
+    public int execute(String commandName, String execPath, List<String> args, String redirectFile,
             OutputStream out, OutputStream err) throws Exception {
         if (execPath == null || execPath.isEmpty())
             return -1;
@@ -36,23 +37,33 @@ public class Executor {
         command.addAll(args); // become $3, $4, ...
 
         ProcessBuilder pb = new ProcessBuilder(command);
+        
+        if (redirectFile !- null) {
+            pb.redirectOutput(new File(redirectFile));
+        }
+        
         Process p = pb.start();
 
-        Thread t1 = new Thread(() -> {
+       Thread t1 = null;
+        if (redirectFile == null) {
+            t1 = new Thread(() -> {
             try {
                 p.getInputStream().transferTo(out);
             } catch (Exception ignored) {
             }
         });
+        t1.start();
+        }
         Thread t2 = new Thread(() -> {
             try {
                 p.getErrorStream().transferTo(err);
             } catch (Exception ignored) {
             }
         });
-        t1.start();
         t2.start();
         int code = p.waitFor();
+
+        if (t1 != null) 
         t1.join();
         t2.join();
         return code;
