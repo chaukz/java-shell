@@ -18,30 +18,30 @@ public class Executor {
         return null;
     }
 
-    public int execute(String commandName, String execPath, List<String> args, String redirectFile,
-                        OutputStream out, OutputStream err) throws Exception {
-        if (execPath == null || execPath.isEmpty())
+    public int execute(String commandName, String execPath, List<String> args, 
+                   RedirectConfig redirects, OutputStream out, OutputStream err) throws Exception {
+       
+            if (execPath == null || execPath.isEmpty())
             return -1;
 
-        List<String> command = new ArrayList<>();
-        command.add("sh");
-        command.add("-c");
-        command.add("name=$1; path=$2; shift 2; exec -a \"$name\" \"$path\" \"$@\"");
-        command.add("sh");
-        command.add(commandName);
+               List<String> command = new ArrayList<>();
         command.add(execPath);
         command.addAll(args);
 
         ProcessBuilder pb = new ProcessBuilder(command);
 
-        if (redirectFile != null) {
-            pb.redirectOutput(new File(redirectFile));
+        if (redirects.hasStdoutRedirect()) {
+            pb.redirectOutput(ProcessBuilder.Redirect.to(redirects.getStdoutFile()));
+        }
+
+        if (redirects.hasStderrRedirect()) {
+            pb.redirectError(ProcessBuilder.Redirect.to(redirects.getStderrFile()));
         }
 
         Process p = pb.start();
 
         Thread t1 = null;
-        if (redirectFile == null) {
+        if (!redirects.hasStdoutRedirect()) {
             t1 = new Thread(() -> {
                 try {
                     p.getInputStream().transferTo(out);
@@ -51,17 +51,20 @@ public class Executor {
             t1.start();
         }
 
-        Thread t2 = new Thread(() -> {
-            try {
-                p.getErrorStream().transferTo(err);
-            } catch (Exception ignored) {
-            }
-        });
-        t2.start();
+        Thread t2 = null;
+        if (!redirects.hasStderrRedirect()) {
+            t2 = new Thread(() -> {
+                try {
+                    p.getErrorStream().transferTo(err);
+                } catch (Exception ignored) {
+                }
+            });
+            t2.start();
+        }
 
         int code = p.waitFor();
         if (t1 != null) t1.join();
-        t2.join();
+        if (t2 != null) t2.join();
         return code;
     }
 }

@@ -1,6 +1,7 @@
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
+import java.lang.ProcessBuilder.Redirect;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -39,24 +40,38 @@ public class Shell {
             }
 
             // Parse the line into command and arguments (respects single quotes)
+                       // Parse the line into command and arguments (respects single quotes)
             List<String> tokens = parseCommandLine(line);
             if (tokens.isEmpty()) {
                 continue;
             }
 
-            // Pull out a redirect target (> or 1>), if there is one
-            String redirectFile = null;
+            // Pull out redirect targets (> , 1>, 2>)
+            RedirectConfig redirects = new RedirectConfig();
             List<String> cleanTokens = new ArrayList<>();
+            
             for (int i = 0; i < tokens.size(); i++) {
                 String tok = tokens.get(i);
+                
                 if (tok.equals(">") || tok.equals("1>")) {
                     if (i + 1 < tokens.size()) {
-                        redirectFile = tokens.get(i + 1);
+                        redirects.setStdoutFile(new File(tokens.get(i + 1)));
+                        i++;
                     }
-                    break;
+                    continue;
                 }
+                
+                if (tok.equals("2>")) {
+                    if (i + 1 < tokens.size()) {
+                        redirects.setStderrFile(new File(tokens.get(i + 1)));
+                        i++;
+                    }
+                    continue;
+                }
+                
                 cleanTokens.add(tok);
             }
+            
             tokens = cleanTokens;
 
             if (tokens.isEmpty()) {
@@ -66,29 +81,29 @@ public class Shell {
             String command = tokens.get(0);
             List<String> args = tokens.subList(1, tokens.size());
 
-            // Decide where builtin output should go: terminal, or a redirect file
+                        // Decide where builtin output should go: terminal, or a redirect file
             PrintStream target = out;
-            if (redirectFile != null) {
-                target = new PrintStream(new FileOutputStream(redirectFile));
+            if (redirects.hasStdoutRedirect()) {
+                target = new PrintStream(new FileOutputStream(redirects.getStdoutFile()));
             }
 
             if (command.equals("echo")) {
                 String output = String.join(" ", args);
                 target.println(output.isEmpty() ? "" : output);
-                if (redirectFile != null) target.close();
+                if (redirects.hasStdoutRedirect()) target.close();
                 continue;
             }
 
             if (command.equals("type")) {
                 String arg = args.isEmpty() ? "" : args.get(0);
                 target.println(builtins.type(arg));
-                if (redirectFile != null) target.close();
+                if (redirects.hasStdoutRedirect()) target.close();
                 continue;
             }
 
             if (command.equals("pwd")) {
                 target.println(System.getProperty("user.dir"));
-                if (redirectFile != null) target.close();
+                if (redirects.hasStdoutRedirect()) target.close();
                 continue;
             }
 
@@ -121,7 +136,7 @@ public class Shell {
             String execPath = executor.findExecutable(command);
             if (execPath != null) {
                 try {
-                    executor.execute(command, execPath, args, redirectFile, out, System.err);
+                    executor.execute(command, execPath, args, redirects, out, System.err);
                 } catch (Exception e) {
                     out.println(command + ": command not found");
                 }
