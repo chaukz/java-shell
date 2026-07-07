@@ -40,7 +40,7 @@ public class Shell {
             }
 
             // Parse the line into command and arguments (respects single quotes)
-                       // Parse the line into command and arguments (respects single quotes)
+            // Parse the line into command and arguments (respects single quotes)
             List<String> tokens = parseCommandLine(line);
             if (tokens.isEmpty()) {
                 continue;
@@ -49,10 +49,10 @@ public class Shell {
             // Pull out redirect targets (> , 1>, 2>)
             RedirectConfig redirects = new RedirectConfig();
             List<String> cleanTokens = new ArrayList<>();
-            
+
             for (int i = 0; i < tokens.size(); i++) {
                 String tok = tokens.get(i);
-                
+
                 if (tok.equals(">") || tok.equals("1>")) {
                     if (i + 1 < tokens.size()) {
                         redirects.setStdoutFile(new File(tokens.get(i + 1)));
@@ -60,7 +60,7 @@ public class Shell {
                     }
                     continue;
                 }
-                
+
                 if (tok.equals("2>")) {
                     if (i + 1 < tokens.size()) {
                         redirects.setStderrFile(new File(tokens.get(i + 1)));
@@ -68,10 +68,28 @@ public class Shell {
                     }
                     continue;
                 }
-                
+
+                if (tok.equals(">>") || tok.equals("1>>")) {
+                    if (i + 1 < tokens.size()) {
+                        redirects.setStdoutFile(new File(tokens.get(i + 1)));
+                        redirects.setStdoutAppend(true);
+                        i++;
+                    }
+                    continue;
+                }
+
+                if (tok.equals("2>>")) {
+                    if (i + 1 < tokens.size()) {
+                        redirects.setStderrFile(new File(tokens.get(i + 1)));
+                        redirects.setStderrAppend(true);
+                        i++;
+                    }
+                    continue;
+                }
+
                 cleanTokens.add(tok);
             }
-            
+
             tokens = cleanTokens;
 
             if (tokens.isEmpty()) {
@@ -81,7 +99,7 @@ public class Shell {
             String command = tokens.get(0);
             List<String> args = tokens.subList(1, tokens.size());
 
-                        // Decide where builtin output should go: terminal, or a redirect file
+            // Decide where builtin output should go: terminal, or a redirect file
             PrintStream target = out;
             if (redirects.hasStdoutRedirect()) {
                 target = new PrintStream(new FileOutputStream(redirects.getStdoutFile()));
@@ -90,20 +108,23 @@ public class Shell {
             if (command.equals("echo")) {
                 String output = String.join(" ", args);
                 target.println(output.isEmpty() ? "" : output);
-                if (redirects.hasStdoutRedirect()) target.close();
+                if (redirects.hasStdoutRedirect())
+                    target.close();
                 continue;
             }
 
             if (command.equals("type")) {
                 String arg = args.isEmpty() ? "" : args.get(0);
                 target.println(builtins.type(arg));
-                if (redirects.hasStdoutRedirect()) target.close();
+                if (redirects.hasStdoutRedirect())
+                    target.close();
                 continue;
             }
 
             if (command.equals("pwd")) {
                 target.println(System.getProperty("user.dir"));
-                if (redirects.hasStdoutRedirect()) target.close();
+                if (redirects.hasStdoutRedirect())
+                    target.close();
                 continue;
             }
 

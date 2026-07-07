@@ -31,11 +31,20 @@ public class Executor {
         ProcessBuilder pb = new ProcessBuilder(command);
 
         if (redirects.hasStdoutRedirect()) {
-            pb.redirectOutput(ProcessBuilder.Redirect.to(redirects.getStdoutFile()));
+            if (redirects.isStdoutAppend()) {
+                pb.redirectOutput(ProcessBuilder.Redirect.appendTo(redirects.getStdoutFile()));
+            } else {
+                pb.redirectOutput(ProcessBuilder.Redirect.to(redirects.getStdoutFile()));
+                
+            }
         }
 
         if (redirects.hasStderrRedirect()) {
-            pb.redirectError(ProcessBuilder.Redirect.to(redirects.getStderrFile()));
+            if (redirects.isStderrAppend()) {
+                pb.redirectError(ProcessBuilder.Redirect.appendTo(redirects.getStderrFile()));
+            } else {
+                pb.redirectError(ProcessBuilder.Redirect.to(redirects.getStderrFile()));
+            }
         }
 
         Process p = pb.start();
