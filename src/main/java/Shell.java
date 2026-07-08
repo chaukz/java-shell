@@ -1,7 +1,6 @@
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
-import java.lang.ProcessBuilder.Redirect;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -11,9 +10,15 @@ public class Shell {
     private final Executor executor;
     private final Scanner scanner;
     private final PrintStream out;
+    private final Trie autocomplete = new Trie();
 
     public Shell() {
         this(new Builtins(), new Executor(), new Scanner(System.in), System.out);
+        autocomplete.insert("echo");
+        autocomplete.insert("exit");
+        autocomplete.insert("pwd");
+        autocomplete.insert("cd");
+        autocomplete.insert("type");
     }
 
     public Shell(Builtins builtins, Executor executor, Scanner scanner, PrintStream out) {
@@ -21,6 +26,19 @@ public class Shell {
         this.executor = executor;
         this.scanner = scanner;
         this.out = out;
+    }
+
+    public String handleTab(String partial) {
+        if (!autocomplete.startsWith(partial)) {
+            return null;
+        }
+
+        List<String> matches = autocomplete.getWordsWithPrefix(partial);
+
+        if (matches.size() == 1) {
+            return matches.get(0) + " ";
+        }
+        return null;
     }
 
     public void run() throws Exception {
@@ -39,14 +57,11 @@ public class Shell {
                 break;
             }
 
-            // Parse the line into command and arguments (respects single quotes)
-            // Parse the line into command and arguments (respects single quotes)
             List<String> tokens = parseCommandLine(line);
             if (tokens.isEmpty()) {
                 continue;
             }
 
-            // Pull out redirect targets (> , 1>, 2>)
             RedirectConfig redirects = new RedirectConfig();
             List<String> cleanTokens = new ArrayList<>();
 
@@ -99,10 +114,9 @@ public class Shell {
             String command = tokens.get(0);
             List<String> args = tokens.subList(1, tokens.size());
 
-            // Decide where builtin output should go: terminal, or a redirect file
             PrintStream target = out;
             if (redirects.hasStdoutRedirect()) {
-                target = new PrintStream(new FileOutputStream(redirects.getStdoutFile()));
+                target = new PrintStream(new FileOutputStream(redirects.getStdoutFile(), redirects.isStdoutAppend()));
             }
 
             if (command.equals("echo")) {
@@ -153,7 +167,6 @@ public class Shell {
                 continue;
             }
 
-            // Try external command execution
             String execPath = executor.findExecutable(command);
             if (execPath != null) {
                 try {
@@ -167,9 +180,6 @@ public class Shell {
         }
     }
 
-    /**
-     * Parse a command line into tokens while respecting quote rules.
-     */
     private List<String> parseCommandLine(String line) {
         List<String> args = new ArrayList<>();
 
@@ -207,7 +217,6 @@ public class Shell {
                     i++;
                     continue;
                 }
-
                 currentArg.append(c);
                 continue;
             }
