@@ -4,13 +4,14 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+import java.util.concurrent.Executor;
 
 public class Shell {
     private final Builtins builtins;
     private final Executor executor;
-    private final Scanner scanner;
     private final PrintStream out;
     private final Trie autocomplete = new Trie();
+    private final StringBuilder inputBuffer = new StringBuilder();
 
     public Shell() {
         this(new Builtins(), new Executor(), new Scanner(System.in), System.out);
@@ -43,12 +44,11 @@ public class Shell {
 
     public void run() throws Exception {
         while (true) {
-            out.print("$ ");
-            if (!scanner.hasNextLine()) {
-                break;
-            }
+            String line = readLine(); // ← NEW: char-by-char with TAB support
+            if (line == null)
+                break; // EOF
+            line = line.trim();
 
-            String line = scanner.nextLine().trim();
             if (line.isEmpty()) {
                 continue;
             }
