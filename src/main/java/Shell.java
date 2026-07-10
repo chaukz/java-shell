@@ -2,8 +2,10 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
-import java.util.concurrent.Executor;
+import java.util.Set;
 
 public class Shell {
     private final Builtins builtins;
@@ -12,6 +14,10 @@ public class Shell {
     private final Trie autocomplete = new Trie();
     private final StringBuilder inputBuffer = new StringBuilder();
 
+    // State for two-TAB behavior
+    private String lastTabPrefix = null;
+    private boolean tabBellRung = false;
+
     public Shell() {
         this(new Builtins(), new Executor(), System.out);
         autocomplete.insert("echo");
@@ -19,8 +25,6 @@ public class Shell {
         autocomplete.insert("pwd");
         autocomplete.insert("cd");
         autocomplete.insert("type");
-
-        // PATH executables
         loadPathExecutables();
     }
 
@@ -28,25 +32,6 @@ public class Shell {
         this.builtins = builtins;
         this.executor = executor;
         this.out = out;
-    }
-
-    private void loadPathExecutables() {
-        String path = System.getenv("PATH");
-        String[] pathDirs = PathUtils.splitPath(path);
-        for (String dir : pathDirs) {
-            File directory = new File(dir);
-            if (directory.exists() && directory.isDirectory()) {
-                File[] files = directory.listFiles();
-                if (files != null) {
-                    for (File file : files) {
-                        if (file.isFile() && file.canExecute()) {
-                            System.err.println("DEBUG adding:" + file.getName());
-                            autocomplete.insert(file.getName());
-                        }
-                    }
-                }
-            }
-        }
     }
 
     public String handleTab(String partial) {
@@ -62,11 +47,38 @@ public class Shell {
         return null;
     }
 
+    private void loadPathExecutables() {
+        String pathEnv = System.getenv("PATH");
+        if (pathEnv == null || pathEnv.isEmpty()) {
+            return;
+        }
+
+        String[] paths = pathEnv.split(":");
+        for (String dirPath : paths) {
+            File dir = new File(dirPath);
+            if (!dir.exists() || !dir.isDirectory()) {
+                continue;
+            }
+
+            File[] files = dir.listFiles();
+            if (files == null) {
+                continue;
+            }
+
+            for (File file : files) {
+                if (file.isFile() && file.canExecute()) {
+                    autocomplete.insert(file.getName());
+                }
+            }
+        }
+    }
+
     public void run() throws Exception {
         while (true) {
             String line = readLine();
-            if (line == null)
+            if (line == null) {
                 break;
+            }
 
             line = line.trim();
             if (line.isEmpty()) {
@@ -188,7 +200,6 @@ public class Shell {
             }
 
             String execPath = executor.findExecutable(command);
-            System.err.println("DEBUG: command=" + command + " execPath=" + execPath); // TESTING
             if (execPath != null) {
                 try {
                     executor.execute(command, execPath, args, redirects, out, System.err);
@@ -198,33 +209,17 @@ public class Shell {
             } else {
                 out.println(command + ": command not found");
             }
-
-            /*
-             * String execPath = executor.findExecutable(command);
-             * System.err.println("DEBUG findExecutable: command=" + command + " execPath="
-             * + execPath);
-             * if (execPath != null) {
-             * try {
-             * int code = executor.execute(command, execPath, args, redirects, out,
-             * System.err);
-             * System.err.println("DEBUG execute returned: " + code);
-             * } catch (Exception e) {
-             * System.err.println("DEBUG execute exception: " + e.getMessage());
-             * out.println(command + ": command not found");
-             * }
-             * } else {
-             * out.println(command + ": command not found");
-             * }
-             */
         }
     }
 
-    // ========== NEW: Character-by-character input with TAB completion ==========
+    // ========== Character-by-character input with TAB completion ==========
 
     private String readLine() throws Exception {
         out.print("$ ");
         out.flush();
         inputBuffer.setLength(0);
+        lastTabPrefix = null;
+        tabBellRung = false;
 
         while (true) {
             int ch = System.in.read();
@@ -249,12 +244,16 @@ public class Shell {
                     out.print("\b \b");
                     out.flush();
                 }
+                lastTabPrefix = null;
+                tabBellRung = false;
                 continue;
             }
 
             inputBuffer.append((char) ch);
             out.print((char) ch);
             out.flush();
+            lastTabPrefix = null;
+            tabBellRung = false;
         }
     }
 
@@ -265,19 +264,35 @@ public class Shell {
 
         if (prefix.isEmpty()) {
             ringBell();
+            lastTabPrefix = null;
+            tabBellRung = false;
             return;
         }
 
         List<String> matches = autocomplete.getWordsWithPrefix(prefix);
 
+        // Remove duplicates and sort alphabetically
+        Set<String> unique = new HashSet<>(matches);
+        matches = new ArrayList<>(unique);
+        Collections.sort(matches);
+
         if (matches.isEmpty()) {
             ringBell();
+            lastTabPrefix = null;
+            tabBellRung = false;
         } else if (matches.size() == 1) {
             String completed = matches.get(0) + " ";
             replaceLastWord(prefix, completed);
+            lastTabPrefix = null;
+            tabBellRung = false;
         } else {
-            ringBell(); // |x07
-            printMatches(matches);
+            if (lastTabPrefix != null && lastTabPrefix.equals(prefix) && tabBellRung) {
+                printMatches(matches);
+            } else {
+                ringBell();
+                lastTabPrefix = prefix;
+                tabBellRung = true;
+            }
         }
     }
 
@@ -305,7 +320,7 @@ public class Shell {
         out.flush();
     }
 
-    // ========== EXISTING parseCommandLine (UNCHANGED) ==========
+    // ========== parseCommandLine (UNCHANGED) ==========
 
     private List<String> parseCommandLine(String line) {
         List<String> args = new ArrayList<>();
