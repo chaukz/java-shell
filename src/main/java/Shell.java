@@ -3,6 +3,7 @@ import java.io.FileOutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executor;
 
 public class Shell {
     private final Builtins builtins;
@@ -18,12 +19,34 @@ public class Shell {
         autocomplete.insert("pwd");
         autocomplete.insert("cd");
         autocomplete.insert("type");
+
+        // PATH executables
+        loadPathExecutables();
     }
 
     public Shell(Builtins builtins, Executor executor, PrintStream out) {
         this.builtins = builtins;
         this.executor = executor;
         this.out = out;
+    }
+
+    private void loadPathExecutables() {
+        String path = System.getenv("PATH");
+        String[] pathDirs = PathUtils.splitPath(path);
+        for (String dir : pathDirs) {
+            File directory = new File(dir);
+            if (directory.exists() && directory.isDirectory()) {
+                File[] files = directory.listFiles();
+                if (files != null) {
+                    for (File file : files) {
+                        if (file.isFile() && file.canExecute()) {
+                            System.err.println("DEBUG adding:" + file.getName());
+                            autocomplete.insert(file.getName());
+                        }
+                    }
+                }
+            }
+        }
     }
 
     public String handleTab(String partial) {
@@ -42,7 +65,8 @@ public class Shell {
     public void run() throws Exception {
         while (true) {
             String line = readLine();
-            if (line == null) break;
+            if (line == null)
+                break;
 
             line = line.trim();
             if (line.isEmpty()) {
@@ -164,6 +188,7 @@ public class Shell {
             }
 
             String execPath = executor.findExecutable(command);
+            System.err.println("DEBUG: command=" + command + " execPath=" + execPath); // TESTING
             if (execPath != null) {
                 try {
                     executor.execute(command, execPath, args, redirects, out, System.err);
@@ -173,6 +198,24 @@ public class Shell {
             } else {
                 out.println(command + ": command not found");
             }
+
+            /*
+             * String execPath = executor.findExecutable(command);
+             * System.err.println("DEBUG findExecutable: command=" + command + " execPath="
+             * + execPath);
+             * if (execPath != null) {
+             * try {
+             * int code = executor.execute(command, execPath, args, redirects, out,
+             * System.err);
+             * System.err.println("DEBUG execute returned: " + code);
+             * } catch (Exception e) {
+             * System.err.println("DEBUG execute exception: " + e.getMessage());
+             * out.println(command + ": command not found");
+             * }
+             * } else {
+             * out.println(command + ": command not found");
+             * }
+             */
         }
     }
 
@@ -233,7 +276,7 @@ public class Shell {
             String completed = matches.get(0) + " ";
             replaceLastWord(prefix, completed);
         } else {
-            ringBell();
+            ringBell(); // |x07
             printMatches(matches);
         }
     }
