@@ -3,8 +3,6 @@ import java.io.FileOutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Scanner;
-import java.util.concurrent.Executor;
 
 public class Shell {
     private final Builtins builtins;
@@ -14,7 +12,7 @@ public class Shell {
     private final StringBuilder inputBuffer = new StringBuilder();
 
     public Shell() {
-        this(new Builtins(), new Executor(), new Scanner(System.in), System.out);
+        this(new Builtins(), new Executor(), System.out);
         autocomplete.insert("echo");
         autocomplete.insert("exit");
         autocomplete.insert("pwd");
@@ -22,10 +20,9 @@ public class Shell {
         autocomplete.insert("type");
     }
 
-    public Shell(Builtins builtins, Executor executor, Scanner scanner, PrintStream out) {
+    public Shell(Builtins builtins, Executor executor, PrintStream out) {
         this.builtins = builtins;
         this.executor = executor;
-        this.scanner = scanner;
         this.out = out;
     }
 
@@ -44,11 +41,10 @@ public class Shell {
 
     public void run() throws Exception {
         while (true) {
-            String line = readLine(); // ← NEW: char-by-char with TAB support
-            if (line == null)
-                break; // EOF
-            line = line.trim();
+            String line = readLine();
+            if (line == null) break;
 
+            line = line.trim();
             if (line.isEmpty()) {
                 continue;
             }
@@ -179,6 +175,94 @@ public class Shell {
             }
         }
     }
+
+    // ========== NEW: Character-by-character input with TAB completion ==========
+
+    private String readLine() throws Exception {
+        out.print("$ ");
+        out.flush();
+        inputBuffer.setLength(0);
+
+        while (true) {
+            int ch = System.in.read();
+
+            if (ch == -1) {
+                return null;
+            }
+
+            if (ch == '\n' || ch == '\r') {
+                out.println();
+                return inputBuffer.toString();
+            }
+
+            if (ch == '\t') {
+                handleTabKey();
+                continue;
+            }
+
+            if (ch == 127 || ch == 8) {
+                if (inputBuffer.length() > 0) {
+                    inputBuffer.deleteCharAt(inputBuffer.length() - 1);
+                    out.print("\b \b");
+                    out.flush();
+                }
+                continue;
+            }
+
+            inputBuffer.append((char) ch);
+            out.print((char) ch);
+            out.flush();
+        }
+    }
+
+    private void handleTabKey() {
+        String text = inputBuffer.toString();
+        int lastSpace = text.lastIndexOf(' ');
+        String prefix = lastSpace == -1 ? text : text.substring(lastSpace + 1);
+
+        if (prefix.isEmpty()) {
+            ringBell();
+            return;
+        }
+
+        List<String> matches = autocomplete.getWordsWithPrefix(prefix);
+
+        if (matches.isEmpty()) {
+            ringBell();
+        } else if (matches.size() == 1) {
+            String completed = matches.get(0) + " ";
+            replaceLastWord(prefix, completed);
+        } else {
+            ringBell();
+            printMatches(matches);
+        }
+    }
+
+    private void replaceLastWord(String oldWord, String newWord) {
+        String text = inputBuffer.toString();
+        int lastSpace = text.lastIndexOf(' ');
+        int start = lastSpace == -1 ? 0 : lastSpace + 1;
+
+        inputBuffer.delete(start, inputBuffer.length());
+        inputBuffer.append(newWord);
+
+        out.print("\r\033[K$ " + inputBuffer);
+        out.flush();
+    }
+
+    private void printMatches(List<String> matches) {
+        out.println();
+        out.println(String.join("  ", matches));
+        out.print("$ " + inputBuffer);
+        out.flush();
+    }
+
+    private void ringBell() {
+        out.print('\u0007');
+        out.flush();
+    }
+
+    // ========== EXISTING parseCommandLine (UNCHANGED) ==========
 
     private List<String> parseCommandLine(String line) {
         List<String> args = new ArrayList<>();
