@@ -286,12 +286,18 @@ public class Shell {
             lastTabPrefix = null;
             tabBellRung = false;
         } else {
-            if (lastTabPrefix != null && lastTabPrefix.equals(prefix) && tabBellRung) {
-                printMatches(matches);
-            } else {
-                ringBell();
-                lastTabPrefix = prefix;
-                tabBellRung = true;
+          String lcp = longestCommonPrefix(matches);
+            if (lcp.length() > prefix.length()) {
+                replaceLastWord(prefix, lcp);
+                lastTabPrefix = lcp;
+            }else{
+                if (lastTabPrefix != null && lastTabPrefix.equals(prefix) && tabBellRung){
+                    printMatches(matches);
+                }else{
+                    ringBell();
+                    lastTabPrefix = prefix;
+                    tabBellRung = true;
+                }
             }
         }
     }
@@ -380,4 +386,23 @@ public class Shell {
 
         return args;
     }
+    private String longestCommonPrefix(List<String> words) {
+        if (words.isEmpty()){
+            return "";
+        }
+        if (words.size() == 1){
+        return words.get(0);
+        }
+        String prefix = words.get(0);
+        for (int i = 1; i < words.size(); i++) {
+            while (!words.get(i).startsWith(prefix)) {
+                prefix = prefix.substring(0, prefix.length() - 1);
+                if (prefix.isEmpty()) {
+                    return "";
+                }
+            }
+        }
+    return prefix;
+    }
+
 }
