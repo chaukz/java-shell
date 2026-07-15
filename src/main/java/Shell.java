@@ -268,9 +268,14 @@ public class Shell {
             tabBellRung = false;
             return;
         }
+        boolean isFirstWord = lastSpace == -1;
 
         List<String> matches = autocomplete.getWordsWithPrefix(prefix);
-
+        if (isFirstWord) {
+            matches = autocomplete.getWordsWithPrefix(prefix);
+        } else {
+            matches = getFileMatches(prefix);
+        }
         // Remove duplicates and sort alphabetically
         Set<String> unique = new HashSet<>(matches);
         matches = new ArrayList<>(unique);
@@ -286,14 +291,14 @@ public class Shell {
             lastTabPrefix = null;
             tabBellRung = false;
         } else {
-          String lcp = longestCommonPrefix(matches);
+            String lcp = longestCommonPrefix(matches);
             if (lcp.length() > prefix.length()) {
                 replaceLastWord(prefix, lcp);
                 lastTabPrefix = lcp;
-            }else{
-                if (lastTabPrefix != null && lastTabPrefix.equals(prefix) && tabBellRung){
+            } else {
+                if (lastTabPrefix != null && lastTabPrefix.equals(prefix) && tabBellRung) {
                     printMatches(matches);
-                }else{
+                } else {
                     ringBell();
                     lastTabPrefix = prefix;
                     tabBellRung = true;
@@ -386,12 +391,13 @@ public class Shell {
 
         return args;
     }
+
     private String longestCommonPrefix(List<String> words) {
-        if (words.isEmpty()){
+        if (words.isEmpty()) {
             return "";
         }
-        if (words.size() == 1){
-        return words.get(0);
+        if (words.size() == 1) {
+            return words.get(0);
         }
         String prefix = words.get(0);
         for (int i = 1; i < words.size(); i++) {
@@ -402,7 +408,72 @@ public class Shell {
                 }
             }
         }
-    return prefix;
+        return prefix;
+    }
+    private List<String> getFileMatches(String prefix) {
+        File dir;
+        String filePrefix;
+
+        // Check if prefix contains a directory path
+        int lastSlash = prefix.lastIndexOf('/');
+        if (lastSlash == -1) {
+            // Simple filename: search in current directory
+            dir = new File(System.getProperty("user.dir"));
+            filePrefix = prefix;
+        } else {
+            // Path with slash: e.g., "src/ma" or "/tmp/test"
+            String dirPath = prefix.substring(0, lastSlash);
+            filePrefix = prefix.substring(lastSlash + 1);
+
+            if (prefix.startsWith("/")) {
+                dir = new File(dirPath);  // Absolute path
+            } else {
+                dir = new File(System.getProperty("user.dir"), dirPath);  // Relative path
+            }
+        }
+
+        if (!dir.exists() || !dir.isDirectory()) {
+            return new ArrayList<>();
+        }
+
+        File[] files = dir.listFiles();
+        if (files == null) {
+            return new ArrayList<>();
+        }
+
+        List<String> matches = new ArrayList<>();
+        for (File file : files) {
+            String name = file.getName();
+            if (name.startsWith(filePrefix)) {
+                // Return the full path the user would type
+                if (lastSlash == -1) {
+                    matches.add(name);
+                } else {
+                    matches.add(prefix.substring(0, lastSlash + 1) + name);
+                }
+            }
+        }
+
+        return matches;
+    }
+
+    public String nestedFileCompletion(String lastTabPrefix){
+        if (lastTabPrefix.contains("/")){
+            String parts[] = lastTabPrefix.split("/");
+            String lastPart = parts[parts.length-1];
+            File dir = new File(lastPart);
+            if (dir.exists() && dir.isDirectory()){
+                File[] files = dir.listFiles();
+                if (files != null){
+                    for (File file : files){
+                        System.out.println(file.getName());
+                    }
+                }
+            }
+
+
+
+        }
     }
 
 }
