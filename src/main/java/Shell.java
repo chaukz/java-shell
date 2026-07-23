@@ -20,18 +20,22 @@ public class Shell {
 
     public Shell() {
         this(new Builtins(), new Executor(), System.out);
-        autocomplete.insert("echo");
-        autocomplete.insert("exit");
-        autocomplete.insert("pwd");
-        autocomplete.insert("cd");
-        autocomplete.insert("type");
-        loadPathExecutables();
+        initializeAutocomplete();
     }
 
     public Shell(Builtins builtins, Executor executor, PrintStream out) {
         this.builtins = builtins;
         this.executor = executor;
         this.out = out;
+    }
+
+    public void initializeAutocomplete() {
+        autocomplete.insert("echo");
+        autocomplete.insert("exit");
+        autocomplete.insert("pwd");
+        autocomplete.insert("cd");
+        autocomplete.insert("type");
+        loadPathExecutables();
     }
 
     public String handleTab(String partial) {
@@ -292,17 +296,23 @@ public class Shell {
             tabBellRung = false;
         } else {
             String lcp = longestCommonPrefix(matches);
+
             if (lcp.length() > prefix.length()) {
                 replaceLastWord(prefix, lcp);
                 lastTabPrefix = lcp;
+                tabBellRung = false;
+                return;
+            }
+
+            boolean isSecondTabForSamePrefix = prefix.equals(lastTabPrefix) && tabBellRung;
+
+            if (isSecondTabForSamePrefix) {
+                printMatches(matches);
+                tabBellRung = false;
             } else {
-                if (lastTabPrefix != null && lastTabPrefix.equals(prefix) && tabBellRung) {
-                    printMatches(matches);
-                } else {
-                    ringBell();
-                    lastTabPrefix = prefix;
-                    tabBellRung = true;
-                }
+                ringBell();
+                lastTabPrefix = prefix;
+                tabBellRung = true;
             }
         }
     }
@@ -410,6 +420,7 @@ public class Shell {
         }
         return prefix;
     }
+
     private List<String> getFileMatches(String prefix) {
         File dir;
         String filePrefix;
@@ -455,25 +466,6 @@ public class Shell {
         }
 
         return matches;
-    }
-
-    public String nestedFileCompletion(String lastTabPrefix){
-        if (lastTabPrefix.contains("/")){
-            String parts[] = lastTabPrefix.split("/");
-            String lastPart = parts[parts.length-1];
-            File dir = new File(lastPart);
-            if (dir.exists() && dir.isDirectory()){
-                File[] files = dir.listFiles();
-                if (files != null){
-                    for (File file : files){
-                        System.out.println(file.getName());
-                    }
-                }
-            }
-
-
-
-        }
     }
 
 }
